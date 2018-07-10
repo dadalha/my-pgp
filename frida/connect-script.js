@@ -43,22 +43,22 @@ Java.perform(function() {
     // Disable SafetyNet
     var SafetyNetService = Java.use("com.nianticlabs.nia.platform.SafetyNetService");
     SafetyNetService.attestResponse.implementation = function(arrby, str) {
-        send('{"Type" : "NianticTrustManager", "Method" : "getAcceptedIssuers","Data" : "' + str + '"}', new Uint8Array(arrby));
+        send('{"Type" : "SafetyNetService", "Method" : "attestResponse","Data" : "' + str + '"}', new Uint8Array(arrby));
         return;
     }
 
     SafetyNetService.checkResult.implementation = function(jSONObject) {
-        send('{"Type" : "NianticTrustManager", "Method" : "checkResult","Data" : "' + jSONObject + '"}');
+        send('{"Type" : "SafetyNetService", "Method" : "checkResult","Data" : "' + jSONObject + '"}');
         return true;
     }
 
     SafetyNetService.attest.implementation = function(arrby) {
-        send('{"Type" : "NianticTrustManager", "Method" : "attest","Data" : null}', new Uint8Array(arrby));
+        send('{"Type" : "SafetyNetService", "Method" : "attest","Data" : null}', new Uint8Array(arrby));
         return;
     }
 
     SafetyNetService.onConnected.implementation = function(arrby) {
-        send('{"Type" : "NianticTrustManager", "Method" : "onConnected","Data" : null}');
+        send('{"Type" : "SafetyNetService", "Method" : "onConnected","Data" : null}');
         SafetyNetService.googleApiState = 0; // Which should be STARTED
         return;
     }
