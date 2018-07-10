@@ -2,7 +2,7 @@ import time
 import frida
 import json
 import sys
-
+import argparse
 
 def printable(data):
     return str(bytes(data).hex())
@@ -13,7 +13,13 @@ def message_handler(message, payload):
         print(message)
         return
 
-    data = json.loads(message['payload'])
+    try:
+        data = json.loads(message['payload'])
+    except:
+        print(message)
+        print(payload)
+        return
+    
     if 'CryptType' in data:
         print("===> {}::{}: {}".format(data['Type'], data['CryptType'], printable(payload)))
 
@@ -35,28 +41,43 @@ def message_handler(message, payload):
         print(message)
 
 
-print("[*] Connecting")
-device = frida.get_usb_device()
-time.sleep(1)  # Without it Java.perform silently fails
+def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument('-s', '--script', action='append', nargs=1)
+    parser.add_argument('-p', '--pid', type=int, default=None)
+    parser.add_argument('-c', '--spawn', type=str, default=None)
+    args = parser.parse_args()
 
-if len(sys.argv) > 1:
-    pid = int(sys.argv[1])
-else:
-    sys.exit(0)
-    print("[*] Spawning")
-    pid = device.spawn("com.nianticlabs.pokemongo")
-    print(device.resume(pid))
+    if args.pid and args.spawn:
+        print("Do not specify --pid and --spawn at the same time")
+        return
 
-print("[*] Attaching: {}".format(pid))
-session = device.attach(pid)
+    if not args.pid and not args.spawn:
+        print("Specify either --pid or --spawn")
+        return
 
-# for module in session.enumerate_modules():
-#     print('MODULE: %s' % module)
+    print("[*] Connecting")
+    device = frida.get_usb_device()
+    time.sleep(1)  # Without it Java.perform silently fails
 
-with open("script.js") as f:
-    script = session.create_script(f.read())
+    if args.pid:
+        pid = args.pid
+    else:
+        print("[*] Spawning")
+        pid = device.spawn(args.spawn)
+        device.resume(pid) # Must do it now or it times out 
 
-script.on("message", message_handler)  # register the message handler
-script.load()
+    print("[*] Attaching: {}".format(pid))
+    session = device.attach(pid)
 
-input()
+    for (scriptname,) in args.script:
+        with open(scriptname) as f:
+            script = session.create_script(f.read())
+            script.on("message", message_handler)  # register the message handler
+            script.load()
+
+    input()
+
+# Usage example
+# python hook.py --spawn=com.android.chrome ript=fake-no-root.js --script=fake-no-emulator.js --script=connect-script.js
+main()

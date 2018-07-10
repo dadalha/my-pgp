@@ -1,0 +1,3 @@
+[submodule "server/my-server"]
+	path = server/my-server
+	url = https://github.com/dadalha/my-server
